@@ -1,5 +1,6 @@
 import streamlit as st
 from branch import router
+from responses import format_response
 
 
 st.set_page_config(
@@ -66,11 +67,22 @@ st.markdown(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# A report applies to one message; follow-ups return to ordinary chat.
+if st.session_state.pop("reset_report_format", False):
+    st.session_state.structured_report = False
+
+# Start a fresh conversation explicitly; changing modes keeps existing context.
+with st.sidebar:
+    if st.button("New conversation"):
+        st.session_state.messages = []
+        st.session_state.structured_report = False
+        st.rerun()
+
 # sidebar
 with st.sidebar:
 
     st.markdown(
-        '<div class="sidebar-title">Review History</div>',
+        '<div class="sidebar-title">Conversation History</div>',
         unsafe_allow_html=True
     )
 
@@ -104,6 +116,12 @@ selected_mode = st.selectbox(
 )
 
 
+structured_report = st.toggle(
+    "Structured report for the next message",
+    key="structured_report",
+    help="Generate a full report in the selected mode. Follow-up messages return to chat automatically.",
+)
+
 # previous chat
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -129,55 +147,21 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    task_input = f"""
-    Selected Mode: {selected_mode}
-
-    User Request:
-    {user_input}
-    """
     router_input = {
         "mode": selected_mode,
-        "task_input": task_input
+        "task_input": user_input,
+        "response_format": "structured" if structured_report else "chat",
+        # The latest user message is already supplied through task_input.
+        "history": [
+            (message["role"], message["content"])
+            for message in st.session_state.messages[:-1]
+        ],
     }
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
-                response = router.invoke(router_input)
-
-                if hasattr(response,"model_dump"):
-                    response_data = response.model_dump()
-                    output_parts = []
-
-                    for field, value in response_data.items():
-                        if value is None:
-                            continue
-                        title = field.replace( "_"," ").title()
-
-                        if isinstance(value,list):
-                            if len(value) == 0:
-                                continue
-
-                            items = "\n".join(
-                                f"- {item}"
-                                for item in value
-                            )
-
-                            output_parts.append(f"### {title}\n\n{items}")
-
-                        elif "code" in field.lower():
-                            output_parts.append(
-                                f"### {title}\n\n"
-                                f"```python\n{value}\n```"
-                            )
-
-                        else:
-                            output_parts.append(f"### {title}\n\n{value}")
-
-                    assistant_response = "\n\n".join(output_parts)
-
-                else:
-                    assistant_response = str(response)
+                assistant_response = format_response(router.invoke(router_input))
 
                 st.markdown(assistant_response)
                 st.session_state.messages.append(
@@ -186,6 +170,8 @@ if user_input:
                         "content": assistant_response
                     }
                 )
+                if structured_report:
+                    st.session_state.reset_report_format = True
                 st.rerun()
 
             except Exception as error:

@@ -62,7 +62,21 @@ The user selects a development mode and provides either:
 - A development requirement
 - A project idea or vision
 
-The request is then routed to the appropriate LangChain workflow.
+The latest request and previous conversation messages are routed to the selected
+LangChain workflow. Each mode replies in natural Markdown and supports follow-up
+questions about earlier code and answers. Modes guide the assistant's expertise
+without requiring a fixed report format.
+
+Enable **Structured report for the next message** to use the selected mode's
+custom Pydantic parser and schema. Reports are displayed as readable sections
+and code blocks. After a successful report, the toggle turns off automatically
+so you can discuss the result in normal chat. Both paths receive the conversation
+history.
+
+Changing modes keeps the conversation context. Use **New conversation** in the
+sidebar to clear the history and start again. History lasts for the current
+Streamlit session and is sent to the model on each turn; long chats can reach the
+model's context limit.
 
 ```text
 User
@@ -87,10 +101,10 @@ RunnableBranch
 LLM
   │
   ▼
-Pydantic Output Parser
+StrOutputParser (chat) / Custom Pydantic Parser (report)
   │
   ▼
-Structured Response
+Markdown Response / Formatted Report
   │
   ▼
 Streamlit Chat Interface
@@ -107,6 +121,7 @@ Streamlit Chat Interface
 - **Groq API**
 - **ChatGroq**
 - **RunnableBranch**
+- **StrOutputParser**
 - **PydanticOutputParser**
 - **python-dotenv**
 
@@ -122,7 +137,9 @@ DevAssist-AI/
 ├── chains.py
 ├── models.py
 ├── prompts.py
+├── parsers.py
 ├── schemas.py
+├── responses.py
 │
 ├── .env
 ├── .gitignore
@@ -142,11 +159,19 @@ Configures and initializes the LLM used by the application.
 
 **`schemas.py`**
 
-Contains the Pydantic models used to define structured AI responses.
+Defines the Pydantic response models used by the structured report workflows.
+
+**`parsers.py`**
+
+Defines the custom output parsers that validate each mode's structured report.
+
+**`responses.py`**
+
+Formats parsed reports as Markdown sections and code blocks for display and chat history.
 
 **`prompts.py`**
 
-Contains specialized prompt templates for each development mode.
+Contains specialized chat prompts for each development mode, including conversation history.
 
 **`chains.py`**
 
@@ -175,9 +200,9 @@ Code Review Prompt
    ↓
 LLM
    ↓
-CodeReview Pydantic Parser
+StrOutputParser / CodeReview Pydantic Parser
    ↓
-Structured Review
+Conversational Reply / Formatted Review Report
 ```
 
 A similar workflow is used for the other modes.
@@ -298,3 +323,13 @@ Full-Stack Web Developer | Python | FastAPI | Django | React | Next.js | LangCha
 ## 📄 License
 
 This project is currently intended for learning, experimentation, and personal development.
+
+## Local checks
+
+Install development dependencies, then run the offline routing and conversation
+regression tests with pytest (no API calls):
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
