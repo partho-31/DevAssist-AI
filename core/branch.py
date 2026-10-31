@@ -1,5 +1,5 @@
 from langchain_core.runnables import RunnableBranch
-from chains import (
+from core.chains import (
     bug_fix_chain,
     bug_fix_chat_chain,
     code_explanation_chain,

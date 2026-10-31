@@ -1,14 +1,14 @@
 from langchain_core.output_parsers import StrOutputParser
 
-from models import model
-from parsers import (
+from .models import model
+from core.parsers import (
     bug_fix_parser,
     code_explanation_parser,
     code_generation_parser,
     code_optimization_parser,
     code_review_parser,
 )
-from prompts import (
+from .prompts import (
     bug_fix_chat_prompt,
     bug_fix_prompt,
     code_explanation_chat_prompt,

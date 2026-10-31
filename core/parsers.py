@@ -1,5 +1,5 @@
 from langchain_core.output_parsers import PydanticOutputParser
-from schemas import BugFixResult, CodeExplanation, CodeGeneration, CodeOptimizationResult, CodeReview
+from core.schemas import BugFixResult, CodeExplanation, CodeGeneration, CodeOptimizationResult, CodeReview
 
 
 

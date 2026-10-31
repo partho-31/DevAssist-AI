@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from parsers import (
+from core.parsers import (
     bug_fix_parser,
     code_explanation_parser,
     code_generation_parser,
